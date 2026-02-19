@@ -11,7 +11,7 @@ module Packwerk
 
       sig { override.params(package_set: PackageSet, configuration: Configuration).returns(Result) }
       def call(package_set, configuration)
-        privacy_settings = package_manifests_settings_for(configuration, 'enforce_privacy')
+        privacy_settings = package_manifests_settings_for(configuration, "enforce_privacy")
 
         results = T.let([], T::Array[Result])
 
@@ -21,7 +21,7 @@ module Packwerk
 
         results += verify_private_constants_setting(package_set, configuration)
 
-        public_path_settings = package_manifests_settings_for(configuration, 'public_path')
+        public_path_settings = package_manifests_settings_for(configuration, "public_path")
         public_path_settings.each do |config_file_path, setting|
           results << check_public_path(config_file_path, setting)
         end
@@ -31,14 +31,14 @@ module Packwerk
 
       sig { override.returns(T::Array[String]) }
       def permitted_keys
-        %w[public_path enforce_privacy private_constants ignored_private_constants strict_privacy_ignored_patterns]
+        %w[public_path enforce_privacy private_constants ignored_private_constants strict_privacy_ignored_patterns privacy_ignored_patterns]
       end
 
       private
 
       sig { params(package_set: PackageSet, configuration: Configuration).returns(T::Array[Result]) }
       def verify_private_constants_setting(package_set, configuration)
-        private_constants_setting = package_manifests_settings_for(configuration, 'private_constants')
+        private_constants_setting = package_manifests_settings_for(configuration, "private_constants")
         results = T.let([], T::Array[Result])
         resolver = ConstantResolver.new(
           root_path: configuration.root_path,
@@ -68,7 +68,7 @@ module Packwerk
                          check_private_constant_location(configuration, package_set, name, location, config_file_path)
                        else
                          private_constant_unresolvable(name, config_file_path)
-                       end
+            end
           end
         end
 
@@ -93,7 +93,7 @@ module Packwerk
         params(config_file_path: String, setting: T.untyped).returns(Result)
       end
       def check_enforce_privacy_setting(config_file_path, setting)
-        if [TrueClass, FalseClass, NilClass].include?(setting.class) || setting == 'strict'
+        if [TrueClass, FalseClass, NilClass].include?(setting.class) || setting == "strict"
           Result.new(ok: true)
         else
           Result.new(
@@ -130,7 +130,7 @@ module Packwerk
             error_value: "'#{name}' is an explicitly publicized constant declared in #{location} through usage of " \
                          "'#{sigil}'. However, the package '#{constant_package}' is also declaring it as a private " \
                          "constant. This conflict must be resolved. Either remove '#{sigil}' from #{location} or " \
-                         'remove this constant from the list of private constants in the config for ' \
+                         "remove this constant from the list of private constants in the config for " \
                          "'#{constant_package}'."
           )
         else
@@ -141,12 +141,12 @@ module Packwerk
       sig { params(constants: T.untyped, config_file_path: String).returns(T::Array[Result]) }
       def assert_constants_can_be_loaded(constants, config_file_path)
         constants.map do |constant|
-          if constant.start_with?('::')
+          if constant.start_with?("::")
             constant.try(&:constantize) && Result.new(ok: true)
           else
             error_value = "'#{constant}', listed in the 'private_constants' option " \
                           "in #{config_file_path}, is invalid.\nPrivate constants need to be " \
-                          'prefixed with the top-level namespace operator `::`.'
+                          "prefixed with the top-level namespace operator `::`."
             Result.new(
               ok: false,
               error_value: error_value
@@ -157,7 +157,7 @@ module Packwerk
 
       sig { params(name: T.untyped, config_file_path: T.untyped).returns(Result) }
       def private_constant_unresolvable(name, config_file_path)
-        explicit_filepath = "#{(name.start_with?('::') ? name[2..] : name).underscore}.rb"
+        explicit_filepath = "#{(name.start_with?("::") ? name[2..] : name).underscore}.rb"
 
         Result.new(
           ok: false,
