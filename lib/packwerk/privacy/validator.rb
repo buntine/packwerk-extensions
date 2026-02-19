@@ -68,7 +68,7 @@ module Packwerk
                          check_private_constant_location(configuration, package_set, name, location, config_file_path)
                        else
                          private_constant_unresolvable(name, config_file_path)
-            end
+                       end
           end
         end
 
