@@ -12,6 +12,7 @@ module Packwerk
       const :private_constants, T::Array[String]
       const :ignored_private_constants, T::Array[String]
       const :strict_privacy_ignored_patterns, T::Array[String]
+      const :privacy_ignored_patterns, T::Array[String]
 
       sig { params(path: String).returns(T::Boolean) }
       def public_path?(path)
@@ -26,24 +27,25 @@ module Packwerk
           Package.new(
             public_path: public_path_for(package),
             user_defined_public_path: user_defined_public_path(package),
-            enforce_privacy: package.config['enforce_privacy'],
-            private_constants: package.config['private_constants'] || [],
-            ignored_private_constants: package.config['ignored_private_constants'] || [],
-            strict_privacy_ignored_patterns: package.config['strict_privacy_ignored_patterns'] || []
+            enforce_privacy: package.config["enforce_privacy"],
+            private_constants: package.config["private_constants"] || [],
+            ignored_private_constants: package.config["ignored_private_constants"] || [],
+            strict_privacy_ignored_patterns: package.config["strict_privacy_ignored_patterns"] || [],
+            privacy_ignored_patterns: package.config["privacy_ignored_patterns"] || []
           )
         end
 
         sig { params(package: ::Packwerk::Package).returns(T.nilable(String)) }
         def user_defined_public_path(package)
-          return unless package.config['public_path']
-          return package.config['public_path'] if package.config['public_path'].end_with?('/')
+          return unless package.config["public_path"]
+          return package.config["public_path"] if package.config["public_path"].end_with?("/")
 
-          "#{package.config['public_path']}/"
+          "#{package.config["public_path"]}/"
         end
 
         sig { params(package: ::Packwerk::Package).returns(String) }
         def public_path_for(package)
-          unprefixed_public_path = user_defined_public_path(package) || 'app/public/'
+          unprefixed_public_path = user_defined_public_path(package) || "app/public/"
 
           if package.root?
             unprefixed_public_path

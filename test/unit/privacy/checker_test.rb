@@ -1,7 +1,7 @@
 # typed: true
 # frozen_string_literal: true
 
-require 'test_helper'
+require "test_helper"
 
 module Packwerk
   module Privacy
@@ -18,10 +18,10 @@ module Packwerk
         teardown_application_fixture
       end
 
-      test 'ignores if destination package is not enforcing' do
+      test "ignores if destination package is not enforcing" do
         destination_package = Packwerk::Package.new(
-          name: 'destination_package',
-          config: { 'enforce_privacy' => false, 'private_constants' => ['::SomeName'] }
+          name: "destination_package",
+          config: { "enforce_privacy" => false, "private_constants" => ["::SomeName"] }
         )
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
@@ -29,10 +29,10 @@ module Packwerk
         refute checker.invalid_reference?(reference)
       end
 
-      test 'ignores if destination package is only enforcing for other constants' do
+      test "ignores if destination package is only enforcing for other constants" do
         destination_package = Packwerk::Package.new(
-          name: 'destination_package',
-          config: { 'enforce_privacy' => true, 'private_constants' => ['::SomeOtherConstant'] }
+          name: "destination_package",
+          config: { "enforce_privacy" => true, "private_constants" => ["::SomeOtherConstant"] }
         )
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
@@ -40,107 +40,123 @@ module Packwerk
         refute checker.invalid_reference?(reference)
       end
 
-      test 'complains about private constant if enforcing privacy for everything' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true })
+      test "complains about private constant if enforcing privacy for everything" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true })
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
 
         assert checker.invalid_reference?(reference)
       end
 
-      test 'does not complain about private constant if enforcing privacy for everything and the destination is publicizing the file' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true })
+      test "does not complain about private constant if enforcing privacy for everything and the destination is publicizing the file" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true })
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
-        Packwerk::Privacy::Checker.publicized_locations['some/location.rb'] = true
+        Packwerk::Privacy::Checker.publicized_locations["some/location.rb"] = true
         refute checker.invalid_reference?(reference)
       end
 
-      test 'does not complain about private constant if it is an ignored_private_constant when using enforce_privacy' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'ignored_private_constants' => ['::SomeName'], 'enforce_privacy' => true })
+      test "does not complain about private constant if it is an ignored_private_constant when using enforce_privacy" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "ignored_private_constants" => ["::SomeName"], "enforce_privacy" => true })
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
 
         refute checker.invalid_reference?(reference)
       end
 
-      test 'complains about private constant if enforcing for specific constants' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true, 'private_constants' => ['::SomeName'] })
+      test "does not complain about private constant if enforcing privacy for everything but offence is in a path covered by privacy_ignored_patterns" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true, "privacy_ignored_patterns" => ["some/**"] })
+        checker = privacy_checker
+        reference = build_reference(destination_package: destination_package)
+
+        refute checker.invalid_reference?(reference)
+      end
+
+      test "complains about private constant if enforcing privacy for everything and offence is NOT in a path covered by privacy_ignored_patterns" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true, "privacy_ignored_patterns" => ["test/**"] })
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
 
         assert checker.invalid_reference?(reference)
       end
 
-      test 'complains about nested constant if enforcing for specific constants' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true, 'private_constants' => ['::SomeName'] })
+      test "complains about private constant if enforcing for specific constants" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true, "private_constants" => ["::SomeName"] })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_name: '::SomeName::Nested')
+        reference = build_reference(destination_package: destination_package)
 
         assert checker.invalid_reference?(reference)
       end
 
-      test 'ignores constant that starts like enforced constant' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true, 'private_constants' => ['::SomeName'] })
+      test "complains about nested constant if enforcing for specific constants" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true, "private_constants" => ["::SomeName"] })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_name: '::SomeNameButNotQuite')
+        reference = build_reference(destination_package: destination_package, constant_name: "::SomeName::Nested")
+
+        assert checker.invalid_reference?(reference)
+      end
+
+      test "ignores constant that starts like enforced constant" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true, "private_constants" => ["::SomeName"] })
+        checker = privacy_checker
+        reference = build_reference(destination_package: destination_package, constant_name: "::SomeNameButNotQuite")
 
         refute checker.invalid_reference?(reference)
       end
 
-      test 'ignores public constant even if enforcing privacy for everything' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true })
+      test "ignores public constant even if enforcing privacy for everything" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_location: 'destination_package/app/public/')
+        reference = build_reference(destination_package: destination_package, constant_location: "destination_package/app/public/")
 
         refute checker.invalid_reference?(reference)
       end
 
-      test 'ignores strict mode if not enabled' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true })
+      test "ignores strict mode if not enabled" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_location: 'destination_package/app/public/')
-        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: 'privacy', message: '')
+        reference = build_reference(destination_package: destination_package, constant_location: "destination_package/app/public/")
+        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: "privacy", message: "")
 
         refute checker.strict_mode_violation?(offense)
       end
 
-      test 'detect strict mode if enabled' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => 'strict' })
+      test "detect strict mode if enabled" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => "strict" })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_location: 'destination_package/app/public/')
-        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: 'privacy', message: '')
+        reference = build_reference(destination_package: destination_package, constant_location: "destination_package/app/public/")
+        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: "privacy", message: "")
 
         assert checker.strict_mode_violation?(offense)
       end
 
-      test 'ignores strict mode if excluded path' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => 'strict', 'strict_privacy_ignored_patterns' => ['some/**'] })
+      test "ignores strict mode if excluded path" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => "strict", "strict_privacy_ignored_patterns" => ["some/**"] })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_location: 'destination_package/app/public/')
-        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: 'privacy', message: '')
+        reference = build_reference(destination_package: destination_package, constant_location: "destination_package/app/public/")
+        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: "privacy", message: "")
 
         refute checker.strict_mode_violation?(offense)
       end
 
-      test 'detects strict mode if not excluded path' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => 'strict', 'strict_privacy_ignored_patterns' => ['test/**'] })
+      test "detects strict mode if not excluded path" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => "strict", "strict_privacy_ignored_patterns" => ["test/**"] })
         checker = privacy_checker
-        reference = build_reference(destination_package: destination_package, constant_location: 'destination_package/app/public/')
-        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: 'privacy', message: '')
+        reference = build_reference(destination_package: destination_package, constant_location: "destination_package/app/public/")
+        offense = Packwerk::ReferenceOffense.new(reference: reference, violation_type: "privacy", message: "")
 
         assert checker.strict_mode_violation?(offense)
       end
 
-      test 'only checks the package TODO file for private constants' do
-        destination_package = Packwerk::Package.new(name: 'destination_package', config: { 'enforce_privacy' => true, 'private_constants' => ['::SomeName'] })
+      test "only checks the package TODO file for private constants" do
+        destination_package = Packwerk::Package.new(name: "destination_package", config: { "enforce_privacy" => true, "private_constants" => ["::SomeName"] })
         checker = privacy_checker
         reference = build_reference(destination_package: destination_package)
 
         checker.invalid_reference?(reference)
       end
 
-      test 'provides a useful message' do
+      test "provides a useful message" do
         assert_equal privacy_checker.message(build_reference), <<~MSG.chomp
           Privacy violation: '::SomeName' is private to 'components/destination' but referenced from 'components/source'.
           Is there a public entrypoint in 'components/destination/app/public/' that you can use instead?
@@ -150,18 +166,18 @@ module Packwerk
         MSG
       end
 
-      test 'content_contains_sigil?' do
+      test "content_contains_sigil?" do
         content_with_valid_sigils = [
-          ['line 1', 'line 2', 'line 3', 'line 4', '# pack_public: true'],
-          ['#pack_public:true', 'line 2', 'line 3'],
-          ['line 1', '#       pack_public:         true']
+          ["line 1", "line 2", "line 3", "line 4", "# pack_public: true"],
+          ["#pack_public:true", "line 2", "line 3"],
+          ["line 1", "#       pack_public:         true"]
         ]
         content_with_invalid_or_missing_sigils = [
-          ['line 1', 'line 2', 'line 3', 'line 4', 'line 5', '# pack_public: true'],
-          ['#pulic_api:', 'line 2', 'line 3'],
-          ['line 1', '#       pack_public:         false'],
-          ['# pack_public: false', 'line 2', 'line 3'],
-          ['line 1', 'EOF']
+          ["line 1", "line 2", "line 3", "line 4", "line 5", "# pack_public: true"],
+          ["#pulic_api:", "line 2", "line 3"],
+          ["line 1", "#       pack_public:         false"],
+          ["# pack_public: false", "line 2", "line 3"],
+          ["line 1", "EOF"]
         ]
         assert(content_with_valid_sigils.all? { |content| Privacy::Checker.content_contains_sigil?(content) })
         assert(content_with_invalid_or_missing_sigils.none? { |content| Privacy::Checker.content_contains_sigil?(content) })

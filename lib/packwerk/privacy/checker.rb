@@ -1,8 +1,8 @@
 # typed: strict
 # frozen_string_literal: true
 
-require 'packwerk/privacy/package'
-require 'packwerk/privacy/validator'
+require "packwerk/privacy/package"
+require "packwerk/privacy/validator"
 
 module Packwerk
   module Privacy
@@ -11,8 +11,8 @@ module Packwerk
       extend T::Sig
       include Packwerk::Checker
 
-      VIOLATION_TYPE = T.let('privacy', String)
-      PUBLICIZED_SIGIL = T.let('pack_public: true', String)
+      VIOLATION_TYPE = T.let("privacy", String)
+      PUBLICIZED_SIGIL = T.let("pack_public: true", String)
       PUBLICIZED_SIGIL_REGEX = T.let(/#.*pack_public:\s*true/, Regexp)
       @publicized_locations = T.let({}, T::Hash[String, T::Boolean])
 
@@ -20,9 +20,7 @@ module Packwerk
         extend T::Sig
 
         sig { returns(T::Hash[String, T::Boolean]) }
-        def publicized_locations
-          @publicized_locations
-        end
+        attr_reader :publicized_locations
 
         sig { params(location: String).returns(T::Boolean) }
         def publicized_location?(location)
@@ -66,6 +64,11 @@ module Packwerk
 
         return false if privacy_package.ignored_private_constants.include?(reference.constant.name)
 
+        return false if exclude_from_check?(
+          constant_package.config["privacy_ignored_patterns"] || [],
+          Pathname.new(reference.relative_path).cleanpath
+        )
+
         explicitly_private_constant?(reference.constant, explicitly_private_constants: privacy_package.private_constants)
       end
 
@@ -77,9 +80,9 @@ module Packwerk
       def strict_mode_violation?(listed_offense)
         publishing_package = listed_offense.reference.constant.package
 
-        return false unless publishing_package.config['enforce_privacy'] == 'strict'
-        return false if exclude_from_strict?(
-          publishing_package.config['strict_privacy_ignored_patterns'] || [],
+        return false unless publishing_package.config["enforce_privacy"] == "strict"
+        return false if exclude_from_check?(
+          publishing_package.config["strict_privacy_ignored_patterns"] || [],
           Pathname.new(listed_offense.reference.relative_path).cleanpath
         )
 
@@ -139,7 +142,7 @@ module Packwerk
       end
 
       sig { params(globs: T::Array[String], path: Pathname).returns(T::Boolean) }
-      def exclude_from_strict?(globs, path)
+      def exclude_from_check?(globs, path)
         globs.any? do |glob|
           path.fnmatch(glob, File::FNM_EXTGLOB)
         end

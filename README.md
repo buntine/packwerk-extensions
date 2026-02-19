@@ -125,6 +125,17 @@ class Foo
 end => Ideal solution. No exceptions from rubocop and very low risk of the magic comment being out of range since
 ```
 
+### Ignore privacy violations coming from specific path patterns
+If you want to deactivate privacy violation checks on specific files or folders, you can set a list of patterns to exclude when `enforce_privacy` is set to `true`.
+
+```yaml
+enforce_privacy: true
+privacy_ignored_patterns:
+- packs/a/packs/b/app/**/*
+```
+
+This is useful when using nested packages and you want to allow a child pack to reference private constants of it's parent without incurring violations. This allows a parent pack to be bundled with it's children as a single "module" of code.
+
 ### Using specific private constants
 Sometimes it is desirable to only enforce privacy on a subset of constants in a package. You can do so by defining a `private_constants` list in your package.yml. Note that `enforce_privacy` must be set to `true` or `'strict'` for this to work.
 
